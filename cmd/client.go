@@ -1,7 +1,8 @@
-package main
+package cmd
 
 import (
 	"context"
+
 	"github.com/google/go-github/v41/github"
 	"github.com/morphysm/famed-github-backend/pkg/pointer"
 	"golang.org/x/oauth2"
@@ -59,4 +60,14 @@ func (gHC *gitHubClient) postLabel(owner string, repo string, label label) error
 	}
 
 	return nil
+}
+
+func (gHC *gitHubClient) getUser(login string) (*github.User, error) {
+	ctx := context.Background()
+	user, _, err := gHC.client.Users.Get(ctx, login)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
