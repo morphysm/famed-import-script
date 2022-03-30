@@ -108,19 +108,19 @@ to quickly create a Cobra application.`,
 
 			reportedDate, err := parseDate(bug.reportedDate)
 			if err != nil {
-				log.Printf("error while parsing reported date for bug %s: %v", bug.uID, err)
+				log.Printf("error while parsing reported date for bug with UID: %s: %v", bug.uID, err)
 				continue
 			}
 
 			publishedDate, err := parseDate(bug.publishedDate)
 			if err != nil {
-				log.Printf("error while parsing reward date for bug %s: %v", bug.uID, err)
+				log.Printf("error while parsing reward date for bug with UID: %s: %v", bug.uID, err)
 				continue
 			}
 
 			reward, err := strconv.ParseFloat(bug.bountyPoints, 64)
 			if err != nil {
-				log.Printf("error while parsing reward for bug %s: %v", bug.uID, err)
+				log.Printf("error while parsing reward for bug with UID: %s: %v", bug.uID, err)
 				continue
 			}
 
@@ -187,7 +187,7 @@ func (rT RedTeam) mapBug(client *gitHubClient, id string, bountyHunter string, r
 		// Get icons
 		err := redT.addUserIcon(client)
 		if err != nil {
-			log.Printf("error while retrieving user icon for bug %s: %v", id, err)
+			log.Printf("error while retrieving user icon for bug with UID: %s: %v", id, err)
 		}
 
 		// Set currency
