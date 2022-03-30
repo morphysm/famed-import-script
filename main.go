@@ -9,10 +9,11 @@ import (
 
 var labels = []label{
 	{name: "famed", color: "8800ff"},
-	{name: "Low", color: "8800ff"},
-	{name: "Medium", color: "8800ff"},
-	{name: "High", color: "8800ff"},
-	{name: "Critical", color: "8800ff"},
+	{name: "info", color: "8800ff"},
+	{name: "low", color: "8800ff"},
+	{name: "medium", color: "8800ff"},
+	{name: "high", color: "8800ff"},
+	{name: "critical", color: "8800ff"},
 	{name: "Nimbus", color: "8800ff"},
 	{name: "Teku", color: "8800ff"},
 	{name: "Prysm", color: "8800ff"},
@@ -45,6 +46,7 @@ func main() {
 		if err != nil {
 			log.Printf("Error while posting label with name: %s, %v", label.name, err)
 		}
+		time.Sleep(4 * time.Second)
 	}
 
 	for _, bug := range bugs {

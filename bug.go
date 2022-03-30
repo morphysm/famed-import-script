@@ -71,17 +71,20 @@ func mapBugs(data [][]string) []bug {
 }
 
 func parseSeverity(severity string) (string, error) {
+	if strings.EqualFold("Info", severity) {
+		return "info", nil
+	}
 	if strings.EqualFold("Low", severity) {
-		return "Low", nil
+		return "low", nil
 	}
 	if strings.EqualFold("Medium", severity) {
-		return "Medium", nil
+		return "medium", nil
 	}
 	if strings.EqualFold("High", severity) {
-		return "High", nil
+		return "high", nil
 	}
 	if strings.EqualFold("Critical", severity) {
-		return "Critical", nil
+		return "critical", nil
 	}
 
 	return "", errors.New("invalid severity")

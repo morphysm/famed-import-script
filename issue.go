@@ -11,7 +11,7 @@ type issue struct {
 }
 
 func newIssue(bug bug) issue {
-	title := "Famed Retroactive Rewards:" + bug.bug
+	title := "Famed Retroactive Rewards: " + bug.bug
 
 	body := "**UID:** " + bug.uID + "\n\n" +
 		"**Severity:** " + bug.severity + "\n\n" +
