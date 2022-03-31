@@ -54,15 +54,18 @@ func (contributors Contributors) mapBug(client *gitHubClient, id string, bountyH
 
 		// Set login
 		login := githubLogins[bountyHunter]
-		if login == "" {
-			log.Printf("no login found for bounty hunter %s", bountyHunter)
-		}
-		redT.Login = login
+		if login != "" {
+			redT.Login = login
 
-		// Get icons
-		err := redT.addUserIcon(client)
-		if err != nil {
-			log.Printf("error while retrieving user icon for bug with UID: %s: %v", id, err)
+			// Get icons
+			err := redT.addUserIcon(client)
+			if err != nil {
+				log.Printf("error while retrieving user icon for bug with UID: %s: %v", id, err)
+			}
+		}
+		if login == "" {
+			log.Printf("no GitHub login found for bounty hunter %s", bountyHunter)
+			redT.Login = bountyHunter
 		}
 
 		// Set currency

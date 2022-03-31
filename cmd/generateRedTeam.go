@@ -51,7 +51,7 @@ to quickly create a Cobra application.`,
 		}
 
 		bugs := mapBugs(data)
-		RedTeam := Contributors{}
+		redTeam := Contributors{}
 		client := newClient(cfg.apiToken)
 		for _, bug := range bugs {
 			// Parse dates and reward
@@ -81,18 +81,16 @@ to quickly create a Cobra application.`,
 			// Split bounty hunters if two are present seperated by ", "
 			bountyHunters := strings.Split(bug.bountyHunter, ", ")
 			for _, hunter := range bountyHunters {
-				RedTeam.mapBug(client, bug.uID, hunter, reportedDate, publishedDate, reward/float64(len(bountyHunters)), bug.severity)
+				redTeam.mapBug(client, bug.uID, hunter, reportedDate, publishedDate, reward/float64(len(bountyHunters)), bug.severity)
 			}
 
 		}
 
 		// Calculate means
-		RedTeam.updateMeanAndDeviationOfDisclosure()
-		RedTeam.updateAverageSeverity()
+		redTeam.updateMeanAndDeviationOfDisclosure()
+		redTeam.updateAverageSeverity()
 
-		sortedTeam := RedTeam.toSortedSlice()
-
-		teamJSON, err := json.MarshalIndent(sortedTeam, "", "    ")
+		teamJSON, err := json.MarshalIndent(redTeam, "", "    ")
 		if err != nil {
 			return err
 		}
