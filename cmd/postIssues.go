@@ -14,11 +14,11 @@ var labels = []label{
 	{name: "medium", color: "8800ff"},
 	{name: "high", color: "8800ff"},
 	{name: "critical", color: "8800ff"},
-	{name: "Nimbus", color: "8800ff"},
-	{name: "Teku", color: "8800ff"},
-	{name: "Prysm", color: "8800ff"},
-	{name: "Lodestar", color: "8800ff"},
-	{name: "Lighthouse", color: "8800ff"},
+	{name: "nimbus", color: "8800ff"},
+	{name: "teku", color: "8800ff"},
+	{name: "prysm", color: "8800ff"},
+	{name: "lodestar", color: "8800ff"},
+	{name: "lighthouse", color: "8800ff"},
 }
 
 // postIssuesCmd represents the postIssues command

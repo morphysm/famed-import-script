@@ -35,19 +35,19 @@ func newIssue(bug bug) issue {
 // parseClients returns a slice of ethereum clients parsed from a string
 func parseClients(client string) []string {
 	if strings.EqualFold("Teku", client) {
-		return []string{"Teku"}
+		return []string{"teku"}
 	}
 	if strings.EqualFold("Prysm", client) {
-		return []string{"Prysm"}
+		return []string{"prysm"}
 	}
 	if strings.EqualFold("Lighthouse", client) {
-		return []string{"Lighthouse"}
+		return []string{"lighthouse"}
 	}
 	if strings.EqualFold("Lodestar", client) {
-		return []string{"Lodestar"}
+		return []string{"lodestar"}
 	}
 	if strings.EqualFold("All clients", client) {
-		return []string{"Teku", "Prysm", "Lighthouse", "Lodestar"}
+		return []string{"teku", "prysm", "lighthouse", "lodestar"}
 	}
 
 	return []string{}
