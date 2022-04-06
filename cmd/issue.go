@@ -10,6 +10,7 @@ type issue struct {
 	labels []string
 }
 
+// newIssue returns a new issue from a bug.
 func newIssue(bug bug) issue {
 	title := "Famed Retroactive Rewards: " + bug.bug
 
@@ -21,6 +22,7 @@ func newIssue(bug bug) issue {
 		"**Links:** " + bug.links + "\n\n" +
 		"**Reported:** " + bug.reportedDate + "\n\n" +
 		"**Fixed:** " + bug.fixedDate + "\n\n" +
+		"**Published:** " + bug.publishedDate + "\n\n" +
 		"**Bounty Hunter:** " + bug.bountyHunter + "\n\n" +
 		"**Bounty Points:** " + bug.bountyPoints
 
@@ -30,6 +32,7 @@ func newIssue(bug bug) issue {
 	return issue{title: title, labels: labels, body: body}
 }
 
+// parseClients returns a slice of ethereum clients parsed from a string
 func parseClients(client string) []string {
 	if strings.EqualFold("Teku", client) {
 		return []string{"Teku"}

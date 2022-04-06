@@ -5,11 +5,15 @@ import (
 	"log"
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 )
 
+// Contributors represents a map of Contributors.
 type Contributors map[string]*Contributor
 
+// Contributor represents a contributor to a red or blue team contributor to a software project.
 type Contributor struct {
 	Login            string           `json:"login"`
 	AvatarURL        string           `json:"avatarUrl"`
@@ -24,90 +28,140 @@ type Contributor struct {
 	MeanSeverity     float64          `json:"meanSeverity"`
 }
 
+// Reward represents a reward received for a contribution.
 type Reward struct {
 	Date   time.Time `json:"date"`
 	Reward float64   `json:"reward"`
 }
 
+// TimeToDisclosure represents the time it took to disclose a vulnerability.
 type TimeToDisclosure struct {
 	Time              []float64 `json:"time"`
 	Mean              float64   `json:"mean"`
 	StandardDeviation float64   `json:"standardDeviation"`
 }
 
+// RewardsLastYear represents the rewards a Contributor received in the last year.
 type RewardsLastYear []MonthlyReward
 
+// MonthlyReward represents the reward a contributor received in a month.
 type MonthlyReward struct {
 	Month  string  `json:"month"`
 	Reward float64 `json:"reward"`
 }
 
-func (contributors Contributors) mapBug(client *gitHubClient, id string, bountyHunter string, reportedDate, publishedDate time.Time, reward float64, severity string) {
-	// Get red teamer from map
-	redT, ok := contributors[bountyHunter]
+// mapBugs maps a slice of bugs to the contributor map.
+func (cs Contributors) mapBugs(client *gitHubClient, bugs []bug) {
+	for _, bug := range bugs {
+		// Verify and parse dates and reward
+		if bug.publishedDate == "" {
+			log.Printf("skipping bug %s due to missing published date", bug.uID)
+			continue
+		}
+
+		reportedDate, err := parseDate(bug.reportedDate)
+		if err != nil {
+			log.Printf("error while parsing reported date for bug with UID: %s: %v", bug.uID, err)
+			continue
+		}
+
+		publishedDate, err := parseDate(bug.publishedDate)
+		if err != nil {
+			log.Printf("error while parsing reward date for bug with UID: %s: %v", bug.uID, err)
+			continue
+		}
+
+		reward, err := strconv.ParseFloat(bug.bountyPoints, 64)
+		if err != nil {
+			log.Printf("error while parsing reward for bug with UID: %s: %v", bug.uID, err)
+			continue
+		}
+
+		// Split bounty hunters if two are present separated by ", "
+		bountyHunters := strings.Split(bug.bountyHunter, ", ")
+		for _, hunter := range bountyHunters {
+			cs.mapBug(client, bug.uID, hunter, reportedDate, publishedDate, reward/float64(len(bountyHunters)), bug.severity)
+		}
+	}
+
+	// Calculate means
+	cs.updateMeanAndDeviationOfDisclosure()
+	cs.updateAverageSeverity()
+}
+
+// mapBug maps a bug to the contributors map.
+func (cs Contributors) mapBug(client *gitHubClient, id string, bountyHunter string, reportedDate, publishedDate time.Time, reward float64, severity string) {
+	// Get red team contributor from map
+	contributor, ok := cs[bountyHunter]
 	if !ok {
-		redT = &Contributor{
+		contributor = &Contributor{
 			Severities: map[string]int{},
 		}
-		contributors[bountyHunter] = redT
+		cs[bountyHunter] = contributor
 
 		// Set login
 		login := githubLogins[bountyHunter]
 		if login != "" {
-			redT.Login = login
+			contributor.Login = login
 
 			// Get icons
-			err := redT.addUserIcon(client)
+			err := contributor.addUserIcon(client)
 			if err != nil {
 				log.Printf("error while retrieving user icon for bug with UID: %s: %v", id, err)
 			}
 		}
 		if login == "" {
 			log.Printf("no GitHub login found for bounty hunter %s", bountyHunter)
-			redT.Login = bountyHunter
+			contributor.Login = bountyHunter
 		}
 
 		// Set currency
-		redT.Currency = "POINTS"
+		contributor.Currency = "POINTS"
 	}
 
-	redT.mapBug(reportedDate, publishedDate, reward, severity)
+	contributor.mapBug(reportedDate, publishedDate, reward, severity)
 }
 
-func (redT *Contributor) mapBug(reportedDate, publishedDate time.Time, reward float64, severity string) {
+// mapBug maps a bug to a contributor
+func (c *Contributor) mapBug(reportedDate, publishedDate time.Time, reward float64, severity string) {
 	// Set reward
-	redT.Rewards = append(redT.Rewards, Reward{Date: publishedDate, Reward: reward})
+	c.Rewards = append(c.Rewards, Reward{Date: publishedDate, Reward: reward})
 
 	// Updated reward sum
-	redT.RewardSum += reward
+	c.RewardSum += reward
 
 	// Increment fix count
-	redT.FixCount++
-	severityCount := redT.Severities[severity]
+	c.FixCount++
+	severityCount := c.Severities[severity]
 	severityCount++
-	redT.Severities[severity] = severityCount
+	c.Severities[severity] = severityCount
 
 	// Update times to disclosure
-	redT.TimeToDisclosure.Time = append(redT.TimeToDisclosure.Time, publishedDate.Sub(reportedDate).Minutes())
+	c.TimeToDisclosure.Time = append(c.TimeToDisclosure.Time, publishedDate.Sub(reportedDate).Minutes())
 }
 
-func (redT *Contributor) addUserIcon(client *gitHubClient) error {
-	if redT.Login == "" {
-		return errors.New("login is empty string")
+// addUserIcon adds a user icon to a contributor fetched from the GitHub API.
+func (c *Contributor) addUserIcon(client *gitHubClient) error {
+	if c.Login == "" {
+		return errors.New("login is a empty string")
 	}
 
-	user, err := client.getUser(redT.Login)
+	user, err := client.getUser(c.Login)
 	if err != nil {
 		return err
 	}
 
-	// TODO add dereference check
-	redT.AvatarURL = *user.AvatarURL
-	redT.HTMLURL = *user.HTMLURL
+	if user.AvatarURL != nil {
+		c.AvatarURL = *user.AvatarURL
+	}
+	if user.HTMLURL != nil {
+		c.HTMLURL = *user.HTMLURL
+	}
 
 	return nil
 }
 
+// parseDate returns a time.Time parsed from a string.
 func parseDate(data string) (time.Time, error) {
 	const layout = "2006-01-02"
 
@@ -120,8 +174,8 @@ func parseDate(data string) (time.Time, error) {
 }
 
 // updateMeanAndDeviationOfDisclosure updates the mean and deviation of the time to disclosure of all contributors.
-func (contributors Contributors) updateMeanAndDeviationOfDisclosure() {
-	for _, contributor := range contributors {
+func (cs Contributors) updateMeanAndDeviationOfDisclosure() {
+	for _, contributor := range cs {
 		if contributor.FixCount == 0 {
 			continue
 		}
@@ -144,8 +198,8 @@ func (contributors Contributors) updateMeanAndDeviationOfDisclosure() {
 }
 
 // updateAverageSeverity updates the average severity field of all contributors.
-func (contributors Contributors) updateAverageSeverity() {
-	for _, contributor := range contributors {
+func (cs Contributors) updateAverageSeverity() {
+	for _, contributor := range cs {
 		if contributor.FixCount == 0 {
 			continue
 		}
@@ -157,16 +211,17 @@ func (contributors Contributors) updateAverageSeverity() {
 	}
 }
 
-func (contributors Contributors) toSortedSlice() []*Contributor {
-	contributorsSlice := contributors.toSlice()
+// toSortedSlice transforms the contributors map to a sorted contributors slice.
+func (cs Contributors) toSortedSlice() []*Contributor {
+	contributorsSlice := cs.toSlice()
 	sortContributors(contributorsSlice)
 	return contributorsSlice
 }
 
-// mapToSlice transforms the contributors map to a contributors slice.
-func (contributors Contributors) toSlice() []*Contributor {
+// toSlice transforms the contributors map to a contributors slice.
+func (cs Contributors) toSlice() []*Contributor {
 	contributorsSlice := make([]*Contributor, 0)
-	for _, contributor := range contributors {
+	for _, contributor := range cs {
 		contributorsSlice = append(contributorsSlice, contributor)
 	}
 

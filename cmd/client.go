@@ -2,26 +2,35 @@ package cmd
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/go-github/v41/github"
 	"github.com/morphysm/famed-github-backend/pkg/pointer"
 	"golang.org/x/oauth2"
 )
 
+// gitHubClient represents a GitHub client.
 type gitHubClient struct {
 	client *github.Client
 }
 
+// newClient returns a new gitHubClient.
 func newClient(apiToken string) *gitHubClient {
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: apiToken},
-	)
-	tc := oauth2.NewClient(ctx, ts)
+	var httpClient *http.Client
+	if apiToken != "" {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: apiToken},
+		)
+		httpClient = oauth2.NewClient(ctx, ts)
+	} else {
+		httpClient = &http.Client{}
+	}
 
-	return &gitHubClient{client: github.NewClient(tc)}
+	return &gitHubClient{client: github.NewClient(httpClient)}
 }
 
+// postIssue posts a GitHub issue to a GitHub repository.
 func (gHC *gitHubClient) postIssue(owner string, repo string, issue issue) error {
 	issueReq := &github.IssueRequest{
 		Title:     &issue.title,
@@ -42,11 +51,13 @@ func (gHC *gitHubClient) postIssue(owner string, repo string, issue issue) error
 	return nil
 }
 
+// label represents a GitHub label.
 type label struct {
 	name  string
 	color string
 }
 
+// postLabel posts a label to a GitHub repository.
 func (gHC *gitHubClient) postLabel(owner string, repo string, label label) error {
 	labelReq := &github.Label{
 		Name:  &label.name,
@@ -62,6 +73,7 @@ func (gHC *gitHubClient) postLabel(owner string, repo string, label label) error
 	return nil
 }
 
+// getUser gets a GitHub user.
 func (gHC *gitHubClient) getUser(login string) (*github.User, error) {
 	ctx := context.Background()
 	user, _, err := gHC.client.Users.Get(ctx, login)

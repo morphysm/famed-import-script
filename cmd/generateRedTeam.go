@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"strconv"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -33,69 +31,38 @@ var githubLogins = map[string]string{
 // generateRedTeamCmd represents the generateRedTeam command
 var generateRedTeamCmd = &cobra.Command{
 	Use:   "generateRedTeam",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Generates a red team json from the Ethereum Foundation Vulnerability Disclosures CSV",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		log.Println("generateRedTeam called")
+		log.Println("generating red team...")
 
-		cfg := ParseArgs(args)
+		// read config from args
+		cfg, err := parseArgsForGenerateRedTeam(args)
+		if err != nil {
+			return err
+		}
 
+		// read csv in path
 		data, err := readCSV(cfg.csvPath)
 		if err != nil {
 			return err
 		}
 
+		// map the csv data to the internal bug datastructure
 		bugs := mapBugs(data)
+
+		// map bugs to contributors and load additional data from the GitHub API
 		redTeam := Contributors{}
-		client := newClient(cfg.apiToken)
-		for _, bug := range bugs {
-			// Parse dates and reward
-			if bug.publishedDate == "" {
-				log.Printf("skipping bug %s due to missing published date", bug.uID)
-				continue
-			}
+		client := newClient("")
+		redTeam.mapBugs(client, bugs)
 
-			reportedDate, err := parseDate(bug.reportedDate)
-			if err != nil {
-				log.Printf("error while parsing reported date for bug with UID: %s: %v", bug.uID, err)
-				continue
-			}
-
-			publishedDate, err := parseDate(bug.publishedDate)
-			if err != nil {
-				log.Printf("error while parsing reward date for bug with UID: %s: %v", bug.uID, err)
-				continue
-			}
-
-			reward, err := strconv.ParseFloat(bug.bountyPoints, 64)
-			if err != nil {
-				log.Printf("error while parsing reward for bug with UID: %s: %v", bug.uID, err)
-				continue
-			}
-
-			// Split bounty hunters if two are present seperated by ", "
-			bountyHunters := strings.Split(bug.bountyHunter, ", ")
-			for _, hunter := range bountyHunters {
-				redTeam.mapBug(client, bug.uID, hunter, reportedDate, publishedDate, reward/float64(len(bountyHunters)), bug.severity)
-			}
-
-		}
-
-		// Calculate means
-		redTeam.updateMeanAndDeviationOfDisclosure()
-		redTeam.updateAverageSeverity()
-
+		// marshal contributors (redTeam) to json
 		teamJSON, err := json.MarshalIndent(redTeam, "", "    ")
 		if err != nil {
 			return err
 		}
 
-		err = ioutil.WriteFile("redTeam.json", teamJSON, 0644)
+		// write json to file
+		err = ioutil.WriteFile(cfg.jsonPath, teamJSON, 0644)
 		if err != nil {
 			return err
 		}
@@ -106,14 +73,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(generateRedTeamCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// generateRedTeamCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// generateRedTeamCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

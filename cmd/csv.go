@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// readCSV return data read from a csv file.
 func readCSV(path string) ([][]string, error) {
 	f, err := os.Open(path)
 	if err != nil {

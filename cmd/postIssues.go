@@ -24,35 +24,41 @@ var labels = []label{
 // postIssuesCmd represents the postIssues command
 var postIssuesCmd = &cobra.Command{
 	Use:   "postIssues",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Posts issues generated from a disclosure csv to a GitHub repository.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		log.Println("postIssues called")
+		log.Println("posting issues...")
 
-		cfg := ParseArgs(args)
+		// read config from args
+		cfg, err := parseArgsForPostIssues(args)
+		if err != nil {
+			return err
+		}
 
+		// read csv in path
 		data, err := readCSV(cfg.csvPath)
 		if err != nil {
 			return err
 		}
 
+		// map the csv data to the internal bug datastructure
 		bugs := mapBugs(data)
 
+		// setup new GitHub client
 		client := newClient(cfg.apiToken)
 
+		// post Famed, severity and ethereum client labels to the GitHub repo
 		for _, label := range labels {
+			log.Printf("Posting label: %s", label)
 			err := client.postLabel(cfg.owner, cfg.repo, label)
 			if err != nil {
 				log.Printf("Error while posting label with name: %s, %v", label.name, err)
 			}
+
+			// sleep to avoid rate limit
 			time.Sleep(4 * time.Second)
 		}
 
+		// transform bugs to issues and post them to the GitHub repo
 		for _, bug := range bugs {
 			issue := newIssue(bug)
 			log.Printf("Posting bug with UID: %s", bug.uID)
@@ -60,6 +66,8 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				log.Printf("Error while posting bug with UID: %s, %v", bug.uID, err)
 			}
+
+			// sleep to avoid rate limit
 			time.Sleep(4 * time.Second)
 		}
 
@@ -69,14 +77,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(postIssuesCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// postIssuesCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// postIssuesCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -21,6 +21,7 @@ type bug struct {
 	bountyPoints    string
 }
 
+// mapBugs maps data to a slice of bugs.
 func mapBugs(data [][]string) []bug {
 	var bugs []bug
 	for i := 1; i < len(data); i++ {
@@ -63,6 +64,10 @@ func mapBugs(data [][]string) []bug {
 			log.Printf("Skipped bug with UID: %s due to missing reported date", bug.uID)
 			continue
 		}
+		if bug.reportedDate == "" {
+			log.Printf("Skipped bug with UID: %s due to missing published date", bug.uID)
+			continue
+		}
 
 		bugs = append(bugs, bug)
 	}
@@ -70,6 +75,7 @@ func mapBugs(data [][]string) []bug {
 	return bugs
 }
 
+// parseSeverity returns a severity parsed from a string.
 func parseSeverity(severity string) (string, error) {
 	if strings.EqualFold("Note", severity) {
 		return "info", nil
