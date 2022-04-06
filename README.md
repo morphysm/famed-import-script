@@ -1,7 +1,7 @@
 # famed-import-script
 
 The Famed import script imports a CSV and allows you to:
-1. Generate and post GitHub issues to a repository.
+1. Generate and post GitHub issues to a repository with all respective labels necessary for the famed Github App to process them.
 2. Generate a red team json to be hosted on the Famed backend server.
 
 ## Commands
