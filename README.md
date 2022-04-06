@@ -21,6 +21,9 @@ The Famed import script imports the Ethereum Foundation Vulnerability Disclosure
 ### Post Issues
 
 This command posts issues generated from the "Ethereum Foundation Vulnerability Disclosures" CSV to a GitHub repository.
+Additionally, it adds the famed, severity and client labels to the repository.
+The commands takes some time due to a sleep interval between each post request.
+The sleep interval protects against the GitHub Rate Limits.
 
 ````
 postIssues <csvPath> <owner> <name> <apiToken>
