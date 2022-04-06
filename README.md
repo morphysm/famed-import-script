@@ -8,7 +8,7 @@ The Famed import script imports a CSV and allows you to:
 
 **Prerequisites**
 
-- Go installed on your computer.
+- Go version > 1.18 installed on your computer.
 - GitHub personal access key as described [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) with access to repositories
 - GitHub repository
 
